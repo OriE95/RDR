@@ -1,0 +1,15 @@
+{
+  "name": "ריבית דריבית",
+  "short_name": "ריבית דריבית",
+  "description": "מחשבון ריבית דריבית לפי תקופות זמן",
+  "start_url": "./compound-interest.html",
+  "display": "standalone",
+  "background_color": "#f2f4f8",
+  "theme_color": "#4361ee",
+  "lang": "he",
+  "dir": "rtl",
+  "icons": [
+    { "src": "icon-192.svg", "sizes": "192x192", "type": "image/svg+xml", "purpose": "any maskable" },
+    { "src": "icon-512.svg", "sizes": "512x512", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}

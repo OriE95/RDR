@@ -1,0 +1,1580 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>מחשבון ריבית דריבית</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#4361ee">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="apple-touch-icon" href="icon-192.svg">
+<link href="https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+:root {
+  --bg: #f2f4f8;
+  --bg-2: #e8ecf4;
+  --card: #ffffff;
+  --card-2: #f8f9fc;
+  --primary: #4361ee;
+  --primary-dim: rgba(67,97,238,0.09);
+  --primary-border: rgba(67,97,238,0.25);
+  --accent: #e6973a;
+  --accent-dim: rgba(230,151,58,0.10);
+  --accent-border: rgba(230,151,58,0.28);
+  --green: #16a34a;
+  --red: #dc2626;
+  --text: #1a1d2e;
+  --text-2: #4a5270;
+  --text-3: #8b93b0;
+  --border: #dde1ee;
+  --border-strong: #c5cce0;
+  --shadow-sm: 0 1px 3px rgba(67,97,238,0.06), 0 1px 2px rgba(0,0,0,0.04);
+  --shadow: 0 4px 16px rgba(67,97,238,0.08), 0 1px 4px rgba(0,0,0,0.05);
+  --shadow-lg: 0 8px 28px rgba(67,97,238,0.12);
+  --r: 14px;
+  --r-sm: 9px;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'Rubik', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+/* Layout */
+.layout {
+  display: grid;
+  grid-template-columns: 292px 1fr;
+  grid-template-rows: 68px 1fr;
+  min-height: 100vh;
+}
+
+/* Header */
+header {
+  grid-column: 1 / -1;
+  grid-row: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 28px;
+  background: #ffffff;
+  border-bottom: 1.5px solid var(--border);
+  box-shadow: var(--shadow-sm);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.brand-icon {
+  width: 38px; height: 38px;
+  background: linear-gradient(135deg, var(--primary), #7b2ff7);
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 19px;
+  box-shadow: 0 3px 10px rgba(67,97,238,0.3);
+}
+.brand-name {
+  font-size: 19px;
+  font-weight: 800;
+  background: linear-gradient(135deg, var(--primary) 0%, #7b2ff7 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.brand-sub {
+  font-size: 11.5px;
+  color: var(--text-3);
+  line-height: 1.2;
+}
+
+/* Sidebar */
+.sidebar {
+  grid-column: 1;
+  grid-row: 2;
+  border-left: 1.5px solid var(--border);
+  background: var(--card);
+  padding: 22px 16px;
+  overflow-y: auto;
+  position: sticky;
+  top: 68px;
+  height: calc(100vh - 68px);
+}
+
+.side-title {
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--text-3);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.hist-empty {
+  text-align: center;
+  color: var(--text-3);
+  font-size: 13px;
+  line-height: 2;
+  padding: 36px 10px;
+}
+
+.hist-item {
+  background: var(--card-2);
+  border: 1.5px solid var(--border);
+  border-radius: var(--r-sm);
+  padding: 13px 13px 11px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+  overflow: hidden;
+}
+.hist-item::after {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 3px;
+  background: var(--primary);
+  border-radius: 0 2px 2px 0;
+  transform: scaleY(0);
+  transition: transform 0.2s;
+  transform-origin: center;
+}
+.hist-item:hover {
+  border-color: var(--primary-border);
+  background: var(--primary-dim);
+  transform: translateX(2px);
+  box-shadow: var(--shadow-sm);
+}
+.hist-item:hover::after { transform: scaleY(1); }
+
+.hist-name {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.hist-amount {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--primary);
+  direction: ltr;
+  text-align: right;
+}
+.hist-meta {
+  font-size: 11px;
+  color: var(--text-3);
+  margin-top: 4px;
+}
+.hist-del {
+  position: absolute;
+  top: 7px; left: 7px;
+  width: 22px; height: 22px;
+  background: rgba(220,38,38,0.07);
+  border: 1px solid rgba(220,38,38,0.15);
+  border-radius: 5px;
+  color: rgba(220,38,38,0.45);
+  cursor: pointer;
+  font-size: 11px;
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0;
+  transition: all 0.15s;
+}
+.hist-item:hover .hist-del { opacity: 1; }
+.hist-del:hover { background: rgba(220,38,38,0.12); color: var(--red); border-color: rgba(220,38,38,0.3); }
+
+/* Main */
+main {
+  grid-column: 2;
+  grid-row: 2;
+  padding: 30px 36px;
+  overflow-y: auto;
+  background: var(--bg);
+}
+
+/* Section headings */
+.sec-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-3);
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.sec-label::before {
+  content: '';
+  width: 18px; height: 2.5px;
+  background: var(--primary);
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+/* Card */
+.card {
+  background: var(--card);
+  border: 1.5px solid var(--border);
+  border-radius: var(--r);
+  padding: 20px;
+  box-shadow: var(--shadow-sm);
+}
+
+/* Starting amount */
+.start-card {
+  background: linear-gradient(135deg, rgba(67,97,238,0.05) 0%, rgba(123,47,247,0.03) 100%);
+  border-color: var(--primary-border);
+  margin-bottom: 26px;
+}
+.start-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--primary);
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Input */
+.field { display: flex; flex-direction: column; gap: 6px; }
+.field-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-2);
+  letter-spacing: 0.01em;
+}
+.input-wrap { position: relative; display: flex; align-items: center; }
+.input-pre {
+  position: absolute; right: 13px;
+  font-size: 13.5px; font-weight: 600;
+  color: var(--text-3);
+  pointer-events: none;
+}
+.input-suf {
+  position: absolute; left: 13px;
+  font-size: 12.5px; font-weight: 600;
+  color: var(--text-3);
+  pointer-events: none;
+}
+
+input[type="number"], input[type="text"] {
+  width: 100%;
+  background: #f7f8fc;
+  border: 1.5px solid var(--border);
+  border-radius: var(--r-sm);
+  padding: 11px 38px 11px 13px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--text);
+  outline: none;
+  transition: all 0.18s;
+  direction: ltr;
+  text-align: right;
+}
+input[type="text"] {
+  font-family: 'Rubik', sans-serif;
+  direction: rtl;
+  text-align: right;
+  padding: 11px 13px;
+}
+input[type="text"].currency-input {
+  padding-right: 38px;
+}
+input:focus {
+  border-color: var(--primary);
+  background: #ffffff;
+  box-shadow: 0 0 0 3px rgba(67,97,238,0.12);
+}
+input:hover:not(:focus) {
+  border-color: var(--border-strong);
+}
+input::-webkit-inner-spin-button, input::-webkit-outer-spin-button { -webkit-appearance: none; }
+
+/* Period cards */
+.periods-wrap { display: flex; flex-direction: column; gap: 14px; margin-bottom: 20px; }
+
+.period-card {
+  background: var(--card);
+  border: 1.5px solid var(--border);
+  border-radius: var(--r);
+  overflow: hidden;
+  animation: fadeUp 0.25s ease;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  box-shadow: var(--shadow-sm);
+}
+.period-card:hover { border-color: var(--accent-border); box-shadow: var(--shadow); }
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.period-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 13px 18px;
+  background: linear-gradient(90deg, rgba(230,151,58,0.07) 0%, rgba(230,151,58,0.03) 100%);
+  border-bottom: 1px solid var(--border);
+}
+.period-head-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #b86a10;
+}
+.period-title-edit {
+  outline: none;
+  border-radius: 4px;
+  padding: 2px 5px;
+  margin: -2px -5px;
+  cursor: text;
+  transition: background 0.15s;
+}
+.period-title-edit:hover { background: rgba(184,106,16,0.1); }
+.period-title-edit:focus { background: rgba(184,106,16,0.15); box-shadow: 0 0 0 2px rgba(184,106,16,0.25); }
+
+.period-num {
+  width: 27px; height: 27px;
+  background: var(--accent);
+  color: #ffffff;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 800;
+  box-shadow: 0 2px 6px rgba(230,151,58,0.35);
+}
+
+.period-body {
+  padding: 18px;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 14px;
+}
+
+.btn-del {
+  background: rgba(220,38,38,0.06);
+  border: 1.5px solid rgba(220,38,38,0.18);
+  color: rgba(220,38,38,0.5);
+  border-radius: 7px;
+  padding: 5px 11px;
+  cursor: pointer;
+  font-size: 12px;
+  font-family: 'Rubik', sans-serif;
+  font-weight: 600;
+  transition: all 0.15s;
+  display: flex; align-items: center; gap: 4px;
+}
+.btn-del:hover { background: rgba(220,38,38,0.1); color: var(--red); border-color: rgba(220,38,38,0.4); }
+
+/* Buttons */
+.btn {
+  padding: 12px 22px;
+  border-radius: var(--r-sm);
+  font-family: 'Rubik', sans-serif;
+  font-size: 14.5px;
+  font-weight: 700;
+  cursor: pointer;
+  border: none;
+  transition: all 0.18s;
+  display: inline-flex; align-items: center; gap: 7px;
+  justify-content: center;
+}
+.btn-add {
+  width: 100%;
+  background: var(--accent-dim);
+  border: 1.5px solid var(--accent-border);
+  color: #b86a10;
+}
+.btn-add:hover { background: rgba(230,151,58,0.16); transform: translateY(-1px); box-shadow: 0 3px 10px rgba(230,151,58,0.18); }
+
+.btn-calc {
+  flex: 1;
+  background: linear-gradient(135deg, var(--primary), #5e3cf7);
+  color: #ffffff;
+  font-size: 15px;
+  box-shadow: 0 4px 18px rgba(67,97,238,0.28);
+  letter-spacing: 0.01em;
+}
+.btn-calc:hover { transform: translateY(-2px); box-shadow: 0 8px 26px rgba(67,97,238,0.38); }
+.btn-calc:active { transform: translateY(0); box-shadow: 0 2px 8px rgba(67,97,238,0.2); }
+
+.btn-reset {
+  background: var(--card);
+  border: 1.5px solid var(--border-strong);
+  color: var(--text-2);
+  padding: 12px 20px;
+}
+.btn-reset:hover { border-color: var(--text-2); color: var(--text); background: var(--card-2); }
+
+.btn-save {
+  background: var(--primary-dim);
+  border: 1.5px solid var(--primary-border);
+  color: var(--primary);
+  padding: 11px 18px;
+  white-space: nowrap;
+  font-weight: 700;
+}
+.btn-save:hover { background: rgba(67,97,238,0.14); box-shadow: 0 2px 8px rgba(67,97,238,0.15); }
+
+.actions-row {
+  display: flex;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+/* Badges */
+.badge {
+  font-size: 10px;
+  font-weight: 800;
+  padding: 2px 8px;
+  border-radius: 20px;
+  letter-spacing: 0.03em;
+}
+.badge-teal { background: var(--primary); color: #ffffff; }
+.badge-gold { background: var(--accent); color: #ffffff; }
+
+/* Results */
+#results { display: none; margin-top: 32px; }
+
+.results-cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  margin-bottom: 24px;
+}
+
+.rc {
+  background: var(--card);
+  border: 1.5px solid var(--border);
+  border-radius: var(--r);
+  padding: 20px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+}
+.rc::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+}
+.rc-final::before { background: linear-gradient(90deg, var(--primary), #7b2ff7); }
+.rc-dep::before   { background: var(--accent); }
+.rc-int::before   { background: var(--green); }
+
+.rc-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-3);
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+.rc-val {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 22px;
+  font-weight: 700;
+  direction: ltr;
+  display: block;
+}
+.rc-final .rc-val { color: var(--primary); }
+.rc-dep   .rc-val { color: var(--text); }
+.rc-int   .rc-val { color: var(--green); }
+.rc-sub { font-size: 12px; color: var(--text-3); margin-top: 5px; }
+
+/* Chart */
+.chart-wrap {
+  background: var(--card);
+  border: 1.5px solid var(--border);
+  border-radius: var(--r);
+  padding: 24px;
+  margin-bottom: 22px;
+  box-shadow: var(--shadow-sm);
+}
+.chart-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-2);
+  margin-bottom: 18px;
+}
+.chart-inner { position: relative; height: 270px; }
+
+/* Table */
+.table-wrap {
+  background: var(--card);
+  border: 1.5px solid var(--border);
+  border-radius: var(--r);
+  overflow: hidden;
+  margin-bottom: 22px;
+  box-shadow: var(--shadow-sm);
+}
+.table-head {
+  padding: 15px 18px;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-2);
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13.5px;
+}
+th {
+  background: #f5f6fb;
+  padding: 11px 16px;
+  text-align: right;
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--text-3);
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  border-bottom: 1.5px solid var(--border);
+}
+td {
+  padding: 13px 16px;
+  border-bottom: 1px solid var(--bg);
+  color: var(--text);
+}
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: rgba(67,97,238,0.03); }
+.td-mono {
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 500;
+  direction: ltr;
+  text-align: right;
+}
+.gold-text { color: #b86a10; font-weight: 600; }
+.teal-text { color: var(--green); font-weight: 600; }
+
+/* Save section */
+.save-wrap {
+  background: var(--card);
+  border: 1.5px solid var(--border);
+  border-radius: var(--r);
+  padding: 20px;
+  box-shadow: var(--shadow-sm);
+}
+.save-label { font-size: 13px; font-weight: 700; color: var(--text-2); margin-bottom: 13px; }
+.save-row { display: flex; gap: 10px; align-items: center; }
+.save-row input { flex: 1; }
+
+/* Toast */
+.toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%) translateY(80px);
+  background: var(--text);
+  border: 1px solid rgba(255,255,255,0.1);
+  color: #ffffff;
+  padding: 12px 26px;
+  border-radius: 100px;
+  font-size: 13.5px;
+  font-weight: 600;
+  transition: transform 0.3s ease;
+  z-index: 999;
+  white-space: nowrap;
+  box-shadow: 0 8px 28px rgba(0,0,0,0.2);
+}
+.toast.show { transform: translateX(-50%) translateY(0); }
+
+/* Error */
+.error-msg {
+  background: rgba(220,38,38,0.06);
+  border: 1.5px solid rgba(220,38,38,0.22);
+  color: var(--red);
+  border-radius: var(--r-sm);
+  padding: 11px 15px;
+  font-size: 13.5px;
+  margin-top: 12px;
+  display: none;
+}
+
+/* Responsive */
+/* Months / Years toggle */
+.months-field-wrap { display: flex; gap: 8px; align-items: center; }
+.months-field-wrap .input-wrap { flex: 1; }
+.unit-toggle { display: flex; border: 1.5px solid var(--border); border-radius: 7px; overflow: hidden; flex-shrink: 0; }
+.unit-btn { padding: 9px 10px; font-size: 12px; font-weight: 600; font-family: 'Rubik', sans-serif; border: none; background: transparent; color: var(--text-3); cursor: pointer; transition: all 0.15s; white-space: nowrap; }
+.unit-btn.active { background: var(--primary); color: #fff; }
+.unit-btn:hover:not(.active) { background: var(--primary-dim); color: var(--primary); }
+
+/* Settings card */
+.settings-card { margin-bottom: 26px; }
+.settings-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+
+/* Extra result cards colors */
+.rc-tax::before  { background: var(--green); }
+.rc-real::before { background: #7b2ff7; }
+.rc-goal::before { background: linear-gradient(90deg, var(--green), #0ea5e9); }
+.rc-tax  .rc-val { color: var(--green); }
+.rc-real .rc-val { color: #7b2ff7; }
+
+/* Goal bar */
+.goal-bar-wrap { margin-top: 10px; }
+.goal-bar-track { height: 5px; background: var(--bg-2); border-radius: 3px; overflow: hidden; margin-top: 6px; }
+.goal-bar-fill  { height: 100%; background: linear-gradient(90deg, var(--green), #0ea5e9); border-radius: 3px; transition: width 1s ease; }
+
+/* Chart header + legend */
+.chart-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+.chart-legend { display: flex; gap: 14px; }
+.legend-item  { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-2); font-weight: 500; }
+.legend-dot   { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
+
+/* Table toggle */
+.table-header       { display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; border-bottom: 1px solid var(--border); }
+.table-head-title   { font-size: 13px; font-weight: 700; color: var(--text-2); }
+.btn-toggle         { font-size: 12px; font-weight: 600; color: var(--primary); background: var(--primary-dim); border: 1.5px solid var(--primary-border); border-radius: 6px; padding: 4px 12px; cursor: pointer; font-family: 'Rubik', sans-serif; transition: all 0.15s; }
+.btn-toggle:hover   { background: rgba(67,97,238,0.14); }
+.hidden-monthly     { display: none; }
+.monthly-row td     { font-size: 12.5px; color: var(--text-2); }
+.monthly-row:hover td { background: rgba(67,97,238,0.025); }
+.period-sep td      { background: rgba(230,151,58,0.04); font-weight: 600; border-bottom: 1px solid rgba(230,151,58,0.13); }
+
+/* Withdrawal calculator */
+.withdrawal-wrap { margin-bottom: 22px; }
+.withdrawal-title { font-size: 13px; font-weight: 700; color: var(--text-2); margin-bottom: 14px; }
+.withdrawal-inputs { display: grid; grid-template-columns: 1fr 1fr auto; gap: 14px; align-items: flex-end; }
+.withdrawal-results { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-top: 16px; }
+.wr-card { background: var(--card-2); border: 1.5px solid var(--border); border-radius: var(--r-sm); padding: 14px 16px; }
+.wr-label { font-size: 10.5px; font-weight: 700; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 6px; }
+.wr-val { font-family: 'JetBrains Mono', monospace; font-size: 17px; font-weight: 700; }
+
+/* Result action row */
+.result-actions     { display: flex; gap: 10px; margin-bottom: 22px; }
+.btn-export, .btn-share { background: var(--card); border: 1.5px solid var(--border-strong); color: var(--text-2); padding: 10px 18px; font-size: 13.5px; }
+.btn-export:hover   { border-color: var(--green); color: var(--green); background: rgba(22,163,74,0.05); }
+.btn-share:hover    { border-color: var(--primary); color: var(--primary); background: var(--primary-dim); }
+
+@media (max-width: 960px) {
+  .withdrawal-inputs { grid-template-columns: 1fr 1fr; }
+  .withdrawal-results { grid-template-columns: 1fr 1fr; }
+  .layout { grid-template-columns: 1fr; }
+  .sidebar {
+    grid-column: 1;
+    grid-row: 3;
+    height: auto;
+    position: static;
+    border-left: none;
+    border-top: 1.5px solid var(--border);
+    display: flex;
+    gap: 10px;
+    overflow-x: auto;
+    padding: 14px;
+  }
+  .side-title { display: none; }
+  .hist-item { min-width: 180px; margin-bottom: 0; }
+  main { grid-column: 1; grid-row: 2; padding: 20px; }
+  .period-body { grid-template-columns: 1fr 1fr; }
+  .results-cards { grid-template-columns: 1fr; }
+  .settings-grid { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 580px) {
+  .period-body { grid-template-columns: 1fr; }
+  .actions-row { flex-direction: column; }
+  .settings-grid { grid-template-columns: 1fr; }
+  .result-actions { flex-direction: column; }
+  .withdrawal-inputs { grid-template-columns: 1fr; }
+  .withdrawal-results { grid-template-columns: 1fr 1fr; }
+  main { padding: 16px; }
+}
+</style>
+</head>
+<body>
+
+<div class="layout">
+
+  <!-- HEADER -->
+  <header>
+    <div class="brand">
+      <div class="brand-icon">📈</div>
+      <div>
+        <div class="brand-name">ריבית דריבית</div>
+        <div class="brand-sub">חישוב לפי תקופות זמן</div>
+      </div>
+    </div>
+  </header>
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <div class="side-title">היסטוריה</div>
+    <div id="histList">
+      <div class="hist-empty">אין חישובים שמורים.<br>חשב ושמור כדי לראות כאן.</div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main>
+
+    <!-- Starting Amount -->
+    <div class="sec-label" style="margin-bottom: 14px;">תקופה 0 — סכום התחלתי</div>
+    <div class="card start-card">
+      <div class="start-label">
+        <span class="badge badge-teal">0</span>
+        כמה כסף יש לך כיום?
+      </div>
+      <div class="field">
+        <div class="input-wrap">
+          <span class="input-pre">₪</span>
+          <input type="text" inputmode="decimal" id="startAmount" class="currency-input" value="0" placeholder="0">
+        </div>
+      </div>
+    </div>
+
+    <!-- Settings -->
+    <div class="sec-label" style="margin-bottom: 14px;">הגדרות חישוב</div>
+    <div class="card settings-card">
+      <div class="settings-grid">
+        <div class="field">
+          <div class="field-label">מס רווחי הון %</div>
+          <div class="input-wrap">
+            <input type="number" id="taxRate" value="25" min="0" max="100" step="1" placeholder="25">
+            <span class="input-suf">%</span>
+          </div>
+        </div>
+        <div class="field">
+          <div class="field-label">אינפלציה שנתית %</div>
+          <div class="input-wrap">
+            <input type="number" id="inflationRate" value="3" min="0" step="0.1" placeholder="3">
+            <span class="input-suf">%</span>
+          </div>
+        </div>
+        <div class="field">
+          <div class="field-label">יעד חיסכון (אופציונלי)</div>
+          <div class="input-wrap">
+            <span class="input-pre">₪</span>
+            <input type="text" inputmode="decimal" id="targetAmount" class="currency-input" placeholder="לא מוגדר">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Periods -->
+    <div class="sec-label">תקופות חיסכון</div>
+    <div class="periods-wrap" id="periodsWrap"></div>
+
+    <button class="btn btn-add" onclick="addPeriod()">
+      + הוסף תקופה
+    </button>
+
+    <div class="error-msg" id="errMsg"></div>
+
+    <!-- Actions -->
+    <div class="actions-row">
+      <button class="btn btn-calc" onclick="calculate()">חשב →</button>
+      <button class="btn btn-reset" onclick="resetAll()">↺ איפוס</button>
+    </div>
+
+    <!-- RESULTS -->
+    <div id="results">
+
+      <div class="sec-label" style="margin-top: 32px;">תוצאות החישוב</div>
+
+      <!-- Summary cards row 1 -->
+      <div class="results-cards">
+        <div class="rc rc-final">
+          <div class="rc-label">סכום סופי (ברוטו)</div>
+          <span class="rc-val" id="r-final">₪0</span>
+        </div>
+        <div class="rc rc-dep">
+          <div class="rc-label">סך הפקדות</div>
+          <span class="rc-val" id="r-dep">₪0</span>
+          <div class="rc-sub" id="r-dep-pct"></div>
+        </div>
+        <div class="rc rc-int">
+          <div class="rc-label">ריבית שנצברה</div>
+          <span class="rc-val" id="r-int">₪0</span>
+          <div class="rc-sub" id="r-int-pct"></div>
+        </div>
+      </div>
+
+      <!-- Summary cards row 2 -->
+      <div class="results-cards">
+        <div class="rc rc-tax">
+          <div class="rc-label">אחרי מס</div>
+          <span class="rc-val" id="r-tax">₪0</span>
+          <div class="rc-sub" id="r-tax-sub"></div>
+        </div>
+        <div class="rc rc-real">
+          <div class="rc-label">ערך ריאלי</div>
+          <span class="rc-val" id="r-real">₪0</span>
+          <div class="rc-sub" id="r-real-sub"></div>
+        </div>
+        <div class="rc" id="rc-goal" style="display:none">
+          <div class="rc-label">יעד חיסכון</div>
+          <span class="rc-val" id="r-goal">—</span>
+          <div class="rc-sub" id="r-goal-sub"></div>
+          <div class="goal-bar-wrap">
+            <div class="goal-bar-track">
+              <div class="goal-bar-fill" id="r-goal-bar" style="width:0%"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Export / Share -->
+      <div class="result-actions">
+        <button class="btn btn-export" onclick="exportCSV()">↓ ייצוא CSV</button>
+        <button class="btn btn-share" onclick="shareLink()">🔗 שתף קישור</button>
+      </div>
+
+      <!-- Withdrawal Calculator -->
+      <div class="withdrawal-wrap card" id="withdrawalCard">
+        <div class="withdrawal-title">💸 חישוב משיכה חודשית</div>
+        <div class="withdrawal-inputs">
+          <div class="field">
+            <div class="field-label">תשואה צפויה שנתית %</div>
+            <div class="input-wrap">
+              <input type="number" id="wReturnRate" value="9" min="0" step="0.1">
+              <span class="input-suf">%</span>
+            </div>
+          </div>
+          <div class="field">
+            <div class="field-label">גדילת תיק רצויה שנתית %</div>
+            <div class="input-wrap">
+              <input type="number" id="wGrowthRate" value="3" min="0" step="0.1">
+              <span class="input-suf">%</span>
+            </div>
+          </div>
+          <button class="btn btn-calc" onclick="calcWithdrawal()" style="align-self:flex-end;padding:11px 18px;font-size:14px;">חשב →</button>
+        </div>
+        <div id="withdrawalResult" style="display:none"></div>
+        <div class="error-msg" id="withdrawalErr"></div>
+      </div>
+
+      <!-- Chart -->
+      <div class="chart-wrap">
+        <div class="chart-header">
+          <div class="chart-title">גרף צמיחה חודשי</div>
+          <div class="chart-legend">
+            <div class="legend-item">
+              <div class="legend-dot" style="background:#4361ee"></div>
+              <span>ריבית</span>
+            </div>
+            <div class="legend-item">
+              <div class="legend-dot" style="background:#e6973a"></div>
+              <span>הפקדות</span>
+            </div>
+          </div>
+        </div>
+        <div class="chart-inner">
+          <canvas id="myChart"></canvas>
+        </div>
+      </div>
+
+      <!-- Period summary table -->
+      <div class="table-wrap">
+        <div class="table-header">
+          <div class="table-head-title">פירוט לפי תקופות</div>
+          <button class="btn-toggle" id="toggleMonthly" onclick="toggleMonthly()">הצג פירוט חודשי</button>
+        </div>
+        <div style="overflow-x: auto;">
+          <table>
+            <thead>
+              <tr>
+                <th>תקופה</th>
+                <th>חודשים</th>
+                <th>ריבית שנת׳</th>
+                <th>הפקדה חוד׳</th>
+                <th>יתרה פתיחה</th>
+                <th>יתרה סגירה</th>
+                <th>רווח מריבית</th>
+              </tr>
+            </thead>
+            <tbody id="tBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Save -->
+      <div class="save-wrap">
+        <div class="save-label">💾 שמור חישוב זה</div>
+        <div class="save-row">
+          <input type="text" id="saveName" placeholder="שם לחישוב (למשל: קרן השתלמות 2024)">
+          <button class="btn btn-save" onclick="saveCalc()">שמור</button>
+        </div>
+      </div>
+
+    </div><!-- /results -->
+
+  </main>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── State ──────────────────────────────────────────────────────────────
+let periodSeq = 0;
+let chartInst = null;
+let lastResult = null;
+let history = [];
+let showMonthly = false;
+const _histMap = {};
+
+try { history = JSON.parse(localStorage.getItem('cic_history') || '[]'); } catch(e) {}
+
+// ── Currency formatting ────────────────────────────────────────────────
+function parseCurrency(el) {
+  return parseFloat(String(el.value).replace(/[^\d.]/g, '')) || 0;
+}
+function formatCurrencyField(el) {
+  const val = parseCurrency(el);
+  el.value = val > 0 ? Math.round(val).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',') : '';
+}
+function initCurrencyInput(el) {
+  el.addEventListener('focus', function() {
+    this.value = String(this.value).replace(/,/g, '');
+    this.select();
+  });
+  el.addEventListener('blur', function() { formatCurrencyField(this); });
+}
+
+// ── Unit toggle (months / years) ───────────────────────────────────────
+function setUnit(btn, unit) {
+  const toggle = btn.closest('.unit-toggle');
+  const prevUnit = toggle.dataset.unit;
+  toggle.querySelectorAll('.unit-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const inp = toggle.closest('.months-field-wrap').querySelector('.months-inp');
+  if (prevUnit !== unit && inp) {
+    const val = parseFloat(inp.value) || 0;
+    if (unit === 'years' && val > 0) {
+      inp.value = +(val / 12).toFixed(2);
+      inp.step = '0.5';
+    } else if (unit === 'months' && val > 0) {
+      inp.value = Math.round(val * 12);
+      inp.step = '1';
+    }
+  }
+  toggle.dataset.unit = unit;
+}
+
+// ── Init ───────────────────────────────────────────────────────────────
+addPeriod();
+renderHistory();
+loadFromURL();
+// Format currency inputs on load
+initCurrencyInput(document.getElementById('startAmount'));
+initCurrencyInput(document.getElementById('targetAmount'));
+formatCurrencyField(document.getElementById('startAmount'));
+
+// ── Period management ──────────────────────────────────────────────────
+function addPeriod() {
+  periodSeq++;
+  const id = periodSeq;
+  const wrap = document.getElementById('periodsWrap');
+  const div = document.createElement('div');
+  div.className = 'period-card';
+  div.dataset.pid = id;
+  div.innerHTML = `
+    <div class="period-head">
+      <div class="period-head-left">
+        <div class="period-num" data-num="${id}">${id}</div>
+        <span data-title="${id}" class="period-title-edit" contenteditable="true" spellcheck="false">תקופה ${id}</span>
+      </div>
+      <button class="btn-del" onclick="removePeriod(this)">✕ הסר</button>
+    </div>
+    <div class="period-body">
+      <div class="field">
+        <div class="field-label">משך</div>
+        <div class="months-field-wrap">
+          <div class="input-wrap" style="flex:1">
+            <input type="number" class="months-inp" value="12" min="1" step="1" placeholder="12">
+          </div>
+          <div class="unit-toggle" data-unit="months">
+            <button type="button" class="unit-btn active" onclick="setUnit(this,'months')">חוד׳</button>
+            <button type="button" class="unit-btn" onclick="setUnit(this,'years')">שנ׳</button>
+          </div>
+        </div>
+      </div>
+      <div class="field">
+        <div class="field-label">ריבית שנתית %</div>
+        <div class="input-wrap">
+          <input type="number" class="rate-inp" value="9" min="0" step="0.1" placeholder="9">
+          <span class="input-suf">%</span>
+        </div>
+      </div>
+      <div class="field">
+        <div class="field-label">הפקדה חודשית</div>
+        <div class="input-wrap">
+          <span class="input-pre">₪</span>
+          <input type="text" inputmode="decimal" class="dep-inp currency-input" value="1,000" placeholder="0">
+        </div>
+      </div>
+    </div>
+  `;
+  wrap.appendChild(div);
+  renumberPeriods();
+  initCurrencyInput(div.querySelector('.dep-inp'));
+  const titleEl = div.querySelector('.period-title-edit');
+  titleEl.addEventListener('input', () => { titleEl.dataset.custom = 'true'; });
+  titleEl.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); titleEl.blur(); } });
+}
+
+function removePeriod(btn) {
+  const card = btn.closest('.period-card');
+  card.style.opacity = '0';
+  card.style.transform = 'translateY(-8px)';
+  card.style.transition = 'all 0.2s';
+  setTimeout(() => { card.remove(); renumberPeriods(); }, 200);
+}
+
+function renumberPeriods() {
+  const cards = document.querySelectorAll('.period-card');
+  cards.forEach((card, i) => {
+    const n = i + 1;
+    const numEl = card.querySelector('[data-num]');
+    const titleEl = card.querySelector('[data-title]');
+    if (numEl) { numEl.textContent = n; numEl.dataset.num = n; }
+    if (titleEl && !titleEl.dataset.custom) { titleEl.textContent = `תקופה ${n}`; titleEl.dataset.title = n; }
+  });
+}
+
+function getPeriods() {
+  const cards = document.querySelectorAll('.period-card');
+  return Array.from(cards).map(card => {
+    const toggle  = card.querySelector('.unit-toggle');
+    const unit    = toggle ? toggle.dataset.unit : 'months';
+    const rawVal  = parseFloat(card.querySelector('.months-inp').value) || 0;
+    const months  = unit === 'years' ? Math.round(rawVal * 12) : rawVal;
+    return {
+      months,
+      rate:    parseFloat(card.querySelector('.rate-inp').value) || 0,
+      deposit: parseCurrency(card.querySelector('.dep-inp')),
+    };
+  });
+}
+
+// ── Calculation ────────────────────────────────────────────────────────
+function calculate() {
+  hideError();
+  const startAmount   = parseCurrency(document.getElementById('startAmount'));
+  const taxRate       = parseFloat(document.getElementById('taxRate').value)        || 0;
+  const inflationRate = parseFloat(document.getElementById('inflationRate').value)  || 0;
+  const targetAmount  = parseCurrency(document.getElementById('targetAmount'));
+  const periods = getPeriods().filter(p => p.months > 0);
+
+  if (periods.length === 0) {
+    showError('אנא הוסף לפחות תקופה אחת עם מספר חודשים חיובי');
+    return;
+  }
+
+  let balance = startAmount;
+  let totalDeposited = startAmount;
+  const monthlyBalances  = [balance];
+  const monthlyDeposited = [totalDeposited];
+  const monthLabels  = ['התחלה'];
+  const periodBounds = [0];
+  const periodSummary = [];
+  const monthlyData   = [];
+  let monthTotal = 0;
+  let goalMonth  = null;
+
+  for (let p = 0; p < periods.length; p++) {
+    const { months, rate, deposit } = periods[p];
+    const startBal = balance;
+    const startDep = totalDeposited;
+    const monthlyRate = Math.pow(1 + rate / 100, 1 / 12) - 1;
+
+    for (let m = 0; m < months; m++) {
+      const prevBalance = balance;
+      balance = (balance + deposit) * (1 + monthlyRate);
+      totalDeposited += deposit;
+      monthTotal++;
+      const interestThisMonth = balance - prevBalance - deposit;
+
+      monthlyBalances.push(balance);
+      monthlyDeposited.push(totalDeposited);
+      monthlyData.push({ month: monthTotal, periodNum: p + 1, deposit, balance, interestThisMonth });
+
+      if (m === 0 || (monthTotal % 6 === 0)) {
+        monthLabels.push(`ח׳${monthTotal}`);
+      } else {
+        monthLabels.push('');
+      }
+
+      if (targetAmount > 0 && goalMonth === null && balance >= targetAmount) goalMonth = monthTotal;
+    }
+
+    periodBounds.push(monthTotal);
+    periodSummary.push({
+      num: p + 1, months, rate, deposit, startBal,
+      endBal: balance,
+      depositedInPeriod: totalDeposited - startDep,
+      interestGained: balance - startBal - (totalDeposited - startDep),
+    });
+  }
+
+  const finalAmount    = balance;
+  const totalInterest  = finalAmount - totalDeposited;
+  const taxAmount      = totalInterest * (taxRate / 100);
+  const afterTaxAmount = finalAmount - taxAmount;
+  const inflFactor     = Math.pow(1 + inflationRate / 100, monthTotal / 12);
+  const realValue      = afterTaxAmount / inflFactor;
+
+  lastResult = {
+    finalAmount, totalDeposited, totalInterest,
+    taxAmount, afterTaxAmount, realValue,
+    monthlyBalances, monthlyDeposited, monthLabels,
+    periodBounds, periodSummary, monthlyData,
+    startAmount, periods,
+    taxRate, inflationRate, targetAmount, goalMonth, totalMonths: monthTotal,
+  };
+
+  renderSummaryCards(lastResult);
+  renderChart(monthlyBalances, monthlyDeposited, monthLabels);
+  renderTable(startAmount, periodSummary, monthlyData);
+
+  const results = document.getElementById('results');
+  results.style.display = 'block';
+  results.style.animation = 'fadeUp 0.4s ease';
+  setTimeout(() => results.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
+}
+
+function renderSummaryCards(r) {
+  document.getElementById('r-final').textContent   = fmt(r.finalAmount);
+  document.getElementById('r-dep').textContent     = fmt(r.totalDeposited);
+  document.getElementById('r-int').textContent     = fmt(r.totalInterest);
+  document.getElementById('r-dep-pct').textContent = pct(r.totalDeposited, r.finalAmount) + '% מהסכום הכולל';
+  document.getElementById('r-int-pct').textContent = pct(r.totalInterest,  r.finalAmount) + '% מהסכום הכולל';
+
+  document.getElementById('r-tax').textContent     = fmt(r.afterTaxAmount);
+  document.getElementById('r-tax-sub').textContent = `מס: −${fmt(r.taxAmount)} (${r.taxRate}%)`;
+  document.getElementById('r-real').textContent    = fmt(r.realValue);
+  document.getElementById('r-real-sub').textContent = `בערך של היום · אינפלציה ${r.inflationRate}%`;
+
+  const goalCard = document.getElementById('rc-goal');
+  if (r.targetAmount > 0) {
+    goalCard.style.display = 'block';
+    goalCard.querySelector('.rc-label').textContent = `יעד: ${fmt(r.targetAmount)}`;
+    const goalVal = document.getElementById('r-goal');
+    const goalSub = document.getElementById('r-goal-sub');
+    const goalBar = document.getElementById('r-goal-bar');
+    if (r.goalMonth !== null) {
+      const y = Math.floor(r.goalMonth / 12), m = r.goalMonth % 12;
+      goalVal.textContent = `חודש ${r.goalMonth}`;
+      goalVal.style.color = 'var(--green)';
+      goalSub.textContent = (y > 0 ? y + ' שנ׳ ' : '') + (m > 0 ? m + ' חוד׳' : '');
+      goalBar.style.width = '100%';
+    } else {
+      const reached = Math.min((r.finalAmount / r.targetAmount) * 100, 100);
+      goalVal.textContent = reached.toFixed(0) + '%';
+      goalVal.style.color = 'var(--text)';
+      goalSub.textContent = `חסר ${fmt(r.targetAmount - r.finalAmount)} להגיע ליעד`;
+      goalBar.style.width = reached + '%';
+    }
+  } else {
+    goalCard.style.display = 'none';
+  }
+}
+
+// ── Chart (stacked area) ───────────────────────────────────────────────
+function renderChart(balances, deposited, labels) {
+  if (chartInst) { chartInst.destroy(); chartInst = null; }
+
+  let bal = balances, dep = deposited, l = labels;
+  if (balances.length > 200) {
+    const step = Math.ceil(balances.length / 200);
+    bal = balances.filter((_, i) => i % step === 0 || i === balances.length - 1);
+    dep = deposited.filter((_, i) => i % step === 0 || i === deposited.length - 1);
+    l   = labels.filter((_, i)   => i % step === 0 || i === labels.length - 1);
+  }
+
+  const interestData = bal.map((b, i) => Math.max(0, b - dep[i]));
+  const ctx = document.getElementById('myChart').getContext('2d');
+
+  const gradDep = ctx.createLinearGradient(0, 0, 0, 270);
+  gradDep.addColorStop(0, 'rgba(230,151,58,0.55)');
+  gradDep.addColorStop(1, 'rgba(230,151,58,0.1)');
+
+  const gradInt = ctx.createLinearGradient(0, 0, 0, 270);
+  gradInt.addColorStop(0, 'rgba(67,97,238,0.55)');
+  gradInt.addColorStop(1, 'rgba(67,97,238,0.08)');
+
+  chartInst = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: l,
+      datasets: [
+        {
+          label: 'הפקדות',
+          data: dep,
+          borderColor: '#e6973a',
+          borderWidth: 1.5,
+          backgroundColor: gradDep,
+          fill: true,
+          tension: 0.3,
+          pointRadius: 0,
+          pointHoverRadius: 5,
+          order: 2,
+        },
+        {
+          label: 'ריבית',
+          data: interestData,
+          borderColor: '#4361ee',
+          borderWidth: 2,
+          backgroundColor: gradInt,
+          fill: true,
+          tension: 0.3,
+          pointRadius: 0,
+          pointHoverRadius: 5,
+          order: 1,
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: { duration: 600, easing: 'easeInOutQuart' },
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          rtl: true,
+          backgroundColor: '#ffffff',
+          borderColor: '#dde1ee',
+          borderWidth: 1.5,
+          titleColor: '#8b93b0',
+          bodyColor: '#1a1d2e',
+          bodyFont: { family: 'JetBrains Mono', size: 12, weight: '600' },
+          padding: 12,
+          callbacks: {
+            label: ctx => ` ${ctx.dataset.label}: ${fmt(ctx.parsed.y)}`,
+            afterBody: items => [` סה״כ: ${fmt(items.reduce((s, i) => s + i.parsed.y, 0))}`],
+          }
+        }
+      },
+      scales: {
+        x: {
+          stacked: true,
+          grid: { color: 'rgba(0,0,0,0.05)' },
+          ticks: { color: '#8b93b0', font: { family: 'Rubik', size: 11.5 }, maxTicksLimit: 14 },
+          border: { color: '#dde1ee' },
+        },
+        y: {
+          stacked: true,
+          grid: { color: 'rgba(0,0,0,0.05)' },
+          ticks: { color: '#8b93b0', font: { family: 'JetBrains Mono', size: 11 }, callback: v => fmtShort(v) },
+          border: { color: '#dde1ee' },
+        }
+      }
+    }
+  });
+}
+
+// ── Table ──────────────────────────────────────────────────────────────
+function renderTable(startAmount, summary, monthlyData) {
+  const tbody = document.getElementById('tBody');
+  tbody.innerHTML = '';
+  showMonthly = false;
+  const toggleBtn = document.getElementById('toggleMonthly');
+  if (toggleBtn) toggleBtn.textContent = 'הצג פירוט חודשי';
+
+  const initRow = document.createElement('tr');
+  initRow.className = 'period-sep';
+  initRow.innerHTML = `
+    <td><span class="badge badge-teal">פתיחה</span></td>
+    <td class="td-mono">—</td><td class="td-mono">—</td><td class="td-mono">—</td>
+    <td class="td-mono">—</td>
+    <td class="td-mono gold-text">${fmt(startAmount)}</td>
+    <td class="td-mono">—</td>
+  `;
+  tbody.appendChild(initRow);
+
+  for (const p of summary) {
+    const tr = document.createElement('tr');
+    tr.className = 'period-sep';
+    tr.innerHTML = `
+      <td><span class="badge badge-gold">${p.num}</span></td>
+      <td class="td-mono">${p.months}</td>
+      <td class="td-mono">${p.rate}%</td>
+      <td class="td-mono">${fmt(p.deposit)}</td>
+      <td class="td-mono">${fmt(p.startBal)}</td>
+      <td class="td-mono gold-text">${fmt(p.endBal)}</td>
+      <td class="td-mono teal-text">+${fmt(p.interestGained)}</td>
+    `;
+    tbody.appendChild(tr);
+
+    for (const m of monthlyData.filter(m => m.periodNum === p.num)) {
+      const mtr = document.createElement('tr');
+      mtr.className = 'monthly-row hidden-monthly';
+      mtr.innerHTML = `
+        <td class="td-mono" style="padding-right:26px;color:var(--text-3)">ח׳${m.month}</td>
+        <td class="td-mono">—</td><td class="td-mono">—</td>
+        <td class="td-mono">${fmt(m.deposit)}</td>
+        <td class="td-mono">—</td>
+        <td class="td-mono">${fmt(m.balance)}</td>
+        <td class="td-mono teal-text">+${fmt(m.interestThisMonth)}</td>
+      `;
+      tbody.appendChild(mtr);
+    }
+  }
+}
+
+function toggleMonthly() {
+  showMonthly = !showMonthly;
+  document.querySelectorAll('.hidden-monthly').forEach(r => r.style.display = showMonthly ? 'table-row' : 'none');
+  const btn = document.getElementById('toggleMonthly');
+  if (btn) btn.textContent = showMonthly ? 'הסתר פירוט חודשי' : 'הצג פירוט חודשי';
+}
+
+// ── Export CSV ─────────────────────────────────────────────────────────
+function exportCSV() {
+  if (!lastResult) return;
+  const rows = [['חודש', 'תקופה', 'הפקדה', 'יתרה', 'ריבית חודשית']];
+  for (const m of lastResult.monthlyData) {
+    rows.push([m.month, m.periodNum, m.deposit.toFixed(2), m.balance.toFixed(2), m.interestThisMonth.toFixed(2)]);
+  }
+  const csv = '\uFEFF' + rows.map(r => r.join(',')).join('\n');
+  const a = Object.assign(document.createElement('a'), {
+    href: URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' })),
+    download: 'compound-interest.csv',
+  });
+  a.click();
+  URL.revokeObjectURL(a.href);
+  showToast('✓ הקובץ הורד');
+}
+
+// ── Share link ─────────────────────────────────────────────────────────
+function shareLink() {
+  const s      = document.getElementById('startAmount').value   || '0';
+  const inf    = document.getElementById('inflationRate').value  || '3';
+  const tax    = document.getElementById('taxRate').value        || '25';
+  const target = document.getElementById('targetAmount').value   || '0';
+  const pStr   = getPeriods().map(p => `${p.months}:${p.rate}:${p.deposit}`).join('|');
+  const hash   = `s=${s}&p=${encodeURIComponent(pStr)}&inf=${inf}&tax=${tax}&target=${target}`;
+  const url    = window.location.href.split('#')[0] + '#' + hash;
+  navigator.clipboard.writeText(url)
+    .then(() => showToast('✓ קישור הועתק ללוח'))
+    .catch(() => prompt('העתק את הקישור:', url));
+}
+
+function loadFromURL() {
+  const hash = window.location.hash.slice(1);
+  if (!hash || !hash.includes('s=')) return;
+  try {
+    const params = {};
+    hash.split('&').forEach(part => {
+      const idx = part.indexOf('=');
+      params[part.slice(0, idx)] = decodeURIComponent(part.slice(idx + 1));
+    });
+    if (params.s   !== undefined) document.getElementById('startAmount').value   = params.s;
+    if (params.inf)               document.getElementById('inflationRate').value  = params.inf;
+    if (params.tax)               document.getElementById('taxRate').value        = params.tax;
+    if (params.target && params.target !== '0') document.getElementById('targetAmount').value = params.target;
+    if (params.p) {
+      document.getElementById('periodsWrap').innerHTML = '';
+      periodSeq = 0;
+      params.p.split('|').forEach(pStr => {
+        const [months, rate, deposit] = pStr.split(':');
+        addPeriod();
+        const last = document.querySelectorAll('.period-card');
+        const card = last[last.length - 1];
+        card.querySelector('.months-inp').value = months;
+        card.querySelector('.rate-inp').value   = rate;
+        card.querySelector('.dep-inp').value    = deposit;
+      });
+      setTimeout(calculate, 100);
+    }
+  } catch(e) {}
+}
+
+// ── History ────────────────────────────────────────────────────────────
+function saveCalc() {
+  if (!lastResult) { showToast('⚠ יש לחשב קודם לפני השמירה'); return; }
+  try {
+    const name = document.getElementById('saveName').value.trim()
+      || `חישוב ${new Date().toLocaleDateString('he-IL')}`;
+    const entry = {
+      id: Date.now(), name,
+      finalAmount:    lastResult.finalAmount,
+      afterTaxAmount: lastResult.afterTaxAmount,
+      date: new Date().toLocaleDateString('he-IL'),
+      startAmount:    lastResult.startAmount,
+      periods:        lastResult.periods,
+      taxRate:        lastResult.taxRate,
+      inflationRate:  lastResult.inflationRate,
+      targetAmount:   lastResult.targetAmount,
+    };
+    history.unshift(entry);
+    if (history.length > 30) history = history.slice(0, 30);
+    try { localStorage.setItem('cic_history', JSON.stringify(history)); } catch(e) { console.warn('localStorage error:', e); }
+    renderHistory();
+    document.getElementById('saveName').value = '';
+    showToast('✓ החישוב נשמר בהצלחה');
+  } catch(e) {
+    console.error('saveCalc error:', e);
+    showToast('⚠ שגיאה בשמירה: ' + e.message);
+  }
+}
+
+function deleteHist(id, e) {
+  e.stopPropagation();
+  history = history.filter(h => h.id !== id);
+  localStorage.setItem('cic_history', JSON.stringify(history));
+  renderHistory();
+}
+
+function loadHist(entry) {
+  document.getElementById('startAmount').value  = entry.startAmount || 0;
+  document.getElementById('taxRate').value       = entry.taxRate      ?? 25;
+  document.getElementById('inflationRate').value = entry.inflationRate ?? 3;
+  document.getElementById('targetAmount').value  = entry.targetAmount > 0 ? entry.targetAmount : '';
+  document.getElementById('periodsWrap').innerHTML = '';
+  periodSeq = 0;
+  for (const p of (entry.periods || [])) {
+    addPeriod();
+    const cards = document.querySelectorAll('.period-card');
+    const last  = cards[cards.length - 1];
+    last.querySelector('.months-inp').value = p.months;
+    last.querySelector('.rate-inp').value   = p.rate;
+    last.querySelector('.dep-inp').value    = p.deposit;
+  }
+  calculate();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function renderHistory() {
+  const el = document.getElementById('histList');
+  if (history.length === 0) {
+    el.innerHTML = '<div class="hist-empty">אין חישובים שמורים.<br>חשב ושמור כדי לראות כאן.</div>';
+    return;
+  }
+  el.innerHTML = history.map(h => `
+    <div class="hist-item" onclick="loadHist(${encodeEntry(h)})">
+      <button class="hist-del" onclick="deleteHist(${h.id}, event)">✕</button>
+      <div class="hist-name">${esc(h.name)}</div>
+      <div class="hist-amount">${fmt(h.afterTaxAmount || h.finalAmount)}</div>
+      <div class="hist-meta">${h.date} · ${(h.periods||[]).length} תקופות</div>
+    </div>
+  `).join('');
+}
+
+function encodeEntry(h) { _histMap[h.id] = h; return `_histMap[${h.id}]`; }
+
+// ── Withdrawal Calculator ──────────────────────────────────────────────
+function calcWithdrawal() {
+  if (!lastResult) return;
+  const errEl = document.getElementById('withdrawalErr');
+  errEl.style.display = 'none';
+
+  const r = parseFloat(document.getElementById('wReturnRate').value) / 100 || 0;
+  const g = parseFloat(document.getElementById('wGrowthRate').value) / 100 || 0;
+  const V = lastResult.finalAmount;
+  const D = lastResult.totalDeposited;
+  const t = lastResult.taxRate / 100;
+
+  if (r <= g) {
+    errEl.textContent = 'התשואה הצפויה חייבת להיות גדולה מקצב הגדילה הרצוי';
+    errEl.style.display = 'block';
+    document.getElementById('withdrawalResult').style.display = 'none';
+    return;
+  }
+
+  const r_m       = Math.pow(1 + r, 1 / 12) - 1;
+  const g_m       = Math.pow(1 + g, 1 / 12) - 1;
+  const wGrossM   = V * (r_m - g_m);
+  const gainRatio = Math.max(0, (V - D) / V);
+  const taxOnW    = wGrossM * gainRatio * t;
+  const wNetM     = wGrossM - taxOnW;
+  const inflFactor = Math.pow(1 + lastResult.inflationRate / 100, lastResult.totalMonths / 12);
+  const wRealM    = wNetM / inflFactor;
+
+  const el = document.getElementById('withdrawalResult');
+  el.innerHTML = `
+    <div class="withdrawal-results">
+      <div class="wr-card">
+        <div class="wr-label">משיכה חודשית ברוטו</div>
+        <div class="wr-val" style="color:var(--text)">${fmt(wGrossM)}</div>
+      </div>
+      <div class="wr-card">
+        <div class="wr-label">מס רווחי הון</div>
+        <div class="wr-val" style="color:var(--red)">−${fmt(taxOnW)}</div>
+        <div style="font-size:11px;color:var(--text-3);margin-top:4px">${(gainRatio*100).toFixed(1)}% רווח · ${lastResult.taxRate}% מס</div>
+      </div>
+      <div class="wr-card" style="border-color:var(--primary-border);background:var(--primary-dim)">
+        <div class="wr-label">נטו חודשי (נומינלי)</div>
+        <div class="wr-val" style="color:var(--primary)">${fmt(wNetM)}</div>
+        <div style="font-size:11px;color:var(--text-3);margin-top:4px">הסכום שתקבל בפועל</div>
+      </div>
+      <div class="wr-card" style="border-color:rgba(123,47,247,0.25);background:rgba(123,47,247,0.06)">
+        <div class="wr-label">נטו חודשי (ריאלי)</div>
+        <div class="wr-val" style="color:#7b2ff7">${fmt(wRealM)}</div>
+        <div style="font-size:11px;color:var(--text-3);margin-top:4px">בערך של היום · אינפלציה ${lastResult.inflationRate}%</div>
+      </div>
+    </div>`;
+  el.style.display = 'block';
+}
+
+// ── Reset ──────────────────────────────────────────────────────────────
+function resetAll() {
+  document.getElementById('startAmount').value   = '0';
+  document.getElementById('taxRate').value       = '25';
+  document.getElementById('inflationRate').value = '3';
+  document.getElementById('targetAmount').value  = '';
+  document.getElementById('periodsWrap').innerHTML = '';
+  periodSeq = 0;
+  addPeriod();
+  document.getElementById('results').style.display = 'none';
+  if (chartInst) { chartInst.destroy(); chartInst = null; }
+  lastResult   = null;
+  showMonthly  = false;
+  hideError();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ── Helpers ────────────────────────────────────────────────────────────
+function fmt(n) {
+  if (isNaN(n)) return '—';
+  n = Math.round(n * 100) / 100;
+  if (Math.abs(n) >= 1e9) return '₪' + (n / 1e9).toFixed(2) + 'B';
+  if (Math.abs(n) >= 1e6) return '₪' + (n / 1e6).toFixed(2) + 'M';
+  return '₪' + n.toLocaleString('he-IL', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+}
+function fmtShort(n) {
+  if (Math.abs(n) >= 1e6) return '₪' + (n/1e6).toFixed(1) + 'M';
+  if (Math.abs(n) >= 1e3) return '₪' + (n/1e3).toFixed(0) + 'K';
+  return '₪' + n.toFixed(0);
+}
+function pct(a, b) { return b ? ((a / b) * 100).toFixed(1) : '0.0'; }
+function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+function showError(msg) { const el = document.getElementById('errMsg'); el.textContent = msg; el.style.display = 'block'; }
+function hideError()    { document.getElementById('errMsg').style.display = 'none'; }
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js'));
+}
+</script>
+</body>
+</html>
